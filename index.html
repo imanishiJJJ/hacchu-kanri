@@ -32,12 +32,9 @@ body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--
 
 /* ヘッダー */
 .header { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--border); padding-top:var(--safe-t); }
-.header-inner { padding:12px 16px 0; }
+.header-inner { padding:12px 16px 12px; }
 .header h1 { font-size:17px; font-weight:700; color:var(--accent); }
 .header p  { font-size:11px; color:var(--text2); margin:2px 0 10px; }
-.tabs { display:flex; }
-.tab { flex:1; padding:10px 0; border:none; background:transparent; color:var(--text2); font-family:inherit; font-size:13px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
-.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 
 /* コンテンツ */
 .content { padding:16px; padding-bottom:calc(80px + var(--safe-b)); max-width:600px; margin:0 auto; }
@@ -145,10 +142,7 @@ body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--
       <h1>🍞 発注管理システム</h1>
       <p>株式会社 カフェヨシノ</p>
     </div>
-    <div class="tabs">
-      <button class="tab active"   id="tab-input"   onclick="switchTab('input')">📝 発注入力</button>
-      <button class="tab inactive" id="tab-history" onclick="switchTab('history')">📊 発注履歴</button>
-    </div>
+
   </div>
 
   <div class="content">
@@ -180,15 +174,7 @@ body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--
       <div id="items-grid"></div>
     </div>
 
-    <!-- 発注履歴 -->
-    <div id="tab-history-content" style="display:none">
-      <div class="history-toolbar">
-        <div class="filter-bar" id="filter-bar"></div>
-        <button class="reload-btn" onclick="loadHistory()">↻ 更新</button>
-      </div>
-      <div id="history-error"></div>
-      <div id="history-list"></div>
-    </div>
+
   </div>
 
   <div class="submit-footer" id="submit-footer">
@@ -231,9 +217,10 @@ function saveGasUrl() {
 function resetGasUrl() { localStorage.removeItem(GAS_KEY); location.reload(); }
 function updateBanner() {
   const url = getGasUrl();
-  if (!url) return;
-  document.getElementById("setup-banner").innerHTML =
-    `<div class="connected-badge">✅ GAS接続済み<button onclick="resetGasUrl()">変更</button></div>`;
+  const el = document.getElementById("setup-banner");
+  if (url) {
+    el.style.display = "none"; // URL設定済みなら完全に非表示
+  }
 }
 
 function today() { return new Date().toISOString().slice(0,10); }
@@ -246,14 +233,7 @@ function fmtDate(s) {
 }
 function fmtNum(n) { return Number(n).toLocaleString(); }
 
-function switchTab(tab) {
-  document.getElementById("tab-input-content").style.display   = tab==="input"   ? "":"none";
-  document.getElementById("tab-history-content").style.display = tab==="history" ? "":"none";
-  document.getElementById("submit-footer").style.display       = tab==="input"   ? "":"none";
-  document.getElementById("tab-input").className   = "tab "+(tab==="input"   ?"active":"inactive");
-  document.getElementById("tab-history").className = "tab "+(tab==="history" ?"active":"inactive");
-  if (tab==="history") loadHistory();
-}
+function switchTab(tab) {} // 互換性のため残す（使用しない）
 
 function initForm() {
   const sel = document.getElementById("f-store");
@@ -288,15 +268,6 @@ function initForm() {
         </div>
       </div>`;
     grid.appendChild(c);
-  });
-
-  const fb = document.getElementById("filter-bar");
-  ["全店舗",...STORES].forEach(s => {
-    const b = document.createElement("button");
-    b.className = "filter-btn"+(s==="全店舗"?" active":"");
-    b.textContent = s;
-    b.onclick = () => { fb.querySelectorAll(".filter-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); renderHistory(s); };
-    fb.appendChild(b);
   });
 }
 
