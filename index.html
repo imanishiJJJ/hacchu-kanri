@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="発注管理">
+<title>🍞 発注管理 — カフェヨシノ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0f0f1a;
+  --surface: #1a1a2e;
+  --surf2:   #12121e;
+  --border:  #2a2a4a;
+  --accent:  #e8a045;
+  --accent2: #d4883a;
+  --text:    #e8e8f0;
+  --text2:   #8080b0;
+  --green:   #50c878;
+  --red:     #e07070;
+  --jisha:   #60a0e8;
+  --daiko:   #e87060;
+  --safe-b:  env(safe-area-inset-bottom, 0px);
+  --safe-t:  env(safe-area-inset-top, 0px);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html { font-size:16px; }
+body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overscroll-behavior:none; }
+
+/* ヘッダー */
+.header { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--border); padding-top:var(--safe-t); }
+.header-inner { padding:12px 16px 0; }
+.header h1 { font-size:17px; font-weight:700; color:var(--accent); }
+.header p  { font-size:11px; color:var(--text2); margin:2px 0 10px; }
+.tabs { display:flex; }
+.tab { flex:1; padding:10px 0; border:none; background:transparent; color:var(--text2); font-family:inherit; font-size:13px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* コンテンツ */
+.content { padding:16px; padding-bottom:calc(80px + var(--safe-b)); max-width:600px; margin:0 auto; }
+
+/* 設定バナー */
+.setup-banner { background:#1e1a10; border:1px solid #5a4010; border-radius:12px; padding:14px; margin-bottom:20px; }
+.setup-banner p { font-size:12px; color:#c0a060; margin-bottom:10px; }
+.setup-row { display:flex; gap:8px; }
+.setup-input { flex:1; background:#12120e; border:1px solid #5a4010; border-radius:8px; padding:11px 12px; color:#e8d5b0; font-family:inherit; font-size:13px; min-width:0; }
+.setup-input:focus { outline:none; border-color:var(--accent); }
+.setup-btn { background:var(--accent); border:none; border-radius:8px; padding:11px 16px; color:#fff; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.connected-badge { display:flex; align-items:center; gap:8px; padding:10px 14px; background:#1a3020; border:1px solid #3a6040; border-radius:10px; font-size:12px; color:var(--green); }
+.connected-badge button { margin-left:auto; background:transparent; border:1px solid #3a5040; border-radius:6px; padding:4px 12px; color:var(--text2); font-family:inherit; font-size:11px; cursor:pointer; }
+
+/* フォーム上部 */
+.form-top { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+.field-full { grid-column:1/-1; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label { font-size:11px; color:var(--text2); font-weight:500; }
+.field select,.field input[type="date"] { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-family:inherit; font-size:15px; width:100%; appearance:none; -webkit-appearance:none; }
+.field select:focus,.field input:focus { outline:none; border-color:var(--accent); }
+
+/* 品目カード */
+.section-title { font-size:11px; font-weight:700; color:var(--accent); letter-spacing:.1em; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.section-title::before { content:''; width:3px; height:13px; background:var(--accent); border-radius:2px; display:inline-block; }
+
+.item-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+.item-header { display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
+.item-name { font-size:14px; font-weight:500; }
+.item-unit { font-size:11px; color:var(--text2); }
+.qty-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.qty-block { display:flex; flex-direction:column; gap:4px; }
+.qty-label { font-size:11px; font-weight:700; }
+.qty-label.jisha { color:var(--jisha); }
+.qty-label.daiko { color:var(--daiko); }
+.qty-price { font-size:10px; color:var(--text2); }
+.qty-input { background:var(--surf2); border:1.5px solid var(--border); border-radius:8px; padding:10px 8px; color:var(--text); font-family:inherit; font-size:20px; font-weight:700; width:100%; text-align:center; -moz-appearance:textfield; }
+.qty-input::-webkit-inner-spin-button,.qty-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+.qty-input:focus { outline:none; border-color:var(--accent); background:#1e1e32; }
+.qty-input.has-value { border-color:#5a5a9a; background:#1a1a30; color:#c0d0ff; }
+
+/* 固定フッター */
+.submit-footer { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--bg); border-top:1px solid var(--border); padding:12px 16px; padding-bottom:calc(12px + var(--safe-b)); }
+.submit-btn { width:100%; max-width:600px; margin:0 auto; display:block; padding:15px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; border-radius:12px; color:#fff; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; transition:all .15s; }
+.submit-btn:active { transform:scale(.98); opacity:.9; }
+.submit-btn:disabled { opacity:.5; cursor:not-allowed; }
+.submit-btn.saved { background:linear-gradient(135deg,var(--green),#3aa060); }
+
+/* 履歴 */
+.history-toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px; flex-wrap:wrap; }
+.filter-bar { display:flex; gap:6px; flex-wrap:wrap; }
+.filter-btn { padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--text2); font-family:inherit; font-size:12px; cursor:pointer; }
+.filter-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; }
+.reload-btn { background:transparent; border:1px solid var(--border); border-radius:8px; padding:7px 14px; color:var(--text2); font-family:inherit; font-size:12px; cursor:pointer; }
+
+.order-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+.order-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px; }
+.order-meta { display:flex; flex-direction:column; gap:4px; }
+.badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-store { background:#2a2a50; color:#a0a0d0; }
+.badge-date  { background:#1e3020; color:#70b060; }
+.order-total { font-size:16px; font-weight:700; color:#e8d5b0; white-space:nowrap; }
+.order-lines { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
+.order-line  { background:var(--surf2); border:1px solid var(--border); border-radius:6px; padding:3px 9px; font-size:11px; color:var(--text2); }
+.order-line b { color:var(--accent); }
+.order-actions { display:flex; gap:8px; }
+.btn-sm { flex:1; padding:10px; border-radius:8px; border:none; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-print { background:#1e2e4a; color:#80b0e0; }
+.btn-del   { background:#2a1818; color:var(--red); }
+
+.empty   { text-align:center; padding:60px 20px; color:#4040a0; font-size:14px; }
+.loading { text-align:center; padding:60px; color:var(--text2); font-size:13px; }
+.err-msg { background:#2a1010; border:1px solid #5a2020; border-radius:10px; padding:12px 14px; color:var(--red); font-size:12px; margin-bottom:14px; }
+
+/* 印刷 */
+#print-view { display:none; }
+.print-toolbar { padding:12px 16px; background:var(--surface); display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border); position:sticky; top:0; }
+.print-back { background:transparent; color:var(--text2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-family:inherit; font-size:13px; cursor:pointer; }
+.print-exec { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.delivery-wrap { background:#fff; color:#000; display:flex; width:100%; }
+.doc-half { width:50%; padding:16px 20px; font-size:11px; }
+.doc-divider { width:1px; background:#ccc; }
+.doc-half h2 { text-align:center; font-size:15px; letter-spacing:.3em; margin-bottom:10px; }
+.doc-meta { width:100%; border-collapse:collapse; margin-bottom:6px; font-size:10px; }
+.doc-meta td:first-child { width:70px; color:#555; }
+.doc-table { width:100%; border-collapse:collapse; border:1px solid #999; font-size:10px; }
+.doc-table th { border:1px solid #999; padding:3px 5px; background:#f0f0f0; }
+.doc-table td { border:1px solid #ccc; padding:3px 5px; }
+.num { text-align:right; } .ctr { text-align:center; }
+.doc-co { margin-top:6px; text-align:right; font-size:9px; color:#555; }
+
+@media print {
+  body { background:#fff !important; }
+  #main-view,.submit-footer { display:none !important; }
+  #print-view { display:block !important; }
+  .print-toolbar { display:none !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="main-view">
+  <div class="header">
+    <div class="header-inner">
+      <h1>🍞 発注管理システム</h1>
+      <p>株式会社 カフェヨシノ</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active"   id="tab-input"   onclick="switchTab('input')">📝 発注入力</button>
+      <button class="tab inactive" id="tab-history" onclick="switchTab('history')">📊 発注履歴</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="setup-banner" class="setup-banner">
+      <p>⚙️ 初回設定：Google Apps Script の URL を入力してください</p>
+      <div class="setup-row">
+        <input class="setup-input" id="gas-url-input" type="url" placeholder="https://script.google.com/macros/s/…/exec">
+        <button class="setup-btn" onclick="saveGasUrl()">保存</button>
+      </div>
+    </div>
+
+    <!-- 発注入力 -->
+    <div id="tab-input-content">
+      <div class="form-top">
+        <div class="field field-full">
+          <label>店舗</label>
+          <select id="f-store"></select>
+        </div>
+        <div class="field">
+          <label>発注日</label>
+          <input type="date" id="f-order-date" oninput="onOrderDateChange()">
+        </div>
+        <div class="field">
+          <label>納品日（自動 +1日）</label>
+          <input type="date" id="f-delivery-date">
+        </div>
+      </div>
+      <div class="section-title">数量を入力</div>
+      <div id="items-grid"></div>
+    </div>
+
+    <!-- 発注履歴 -->
+    <div id="tab-history-content" style="display:none">
+      <div class="history-toolbar">
+        <div class="filter-bar" id="filter-bar"></div>
+        <button class="reload-btn" onclick="loadHistory()">↻ 更新</button>
+      </div>
+      <div id="history-error"></div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <div class="submit-footer" id="submit-footer">
+    <button class="submit-btn" id="submit-btn" onclick="submitOrder()">発注を登録する →</button>
+  </div>
+</div>
+
+<!-- 印刷画面 -->
+<div id="print-view">
+  <div class="print-toolbar">
+    <button class="print-back" onclick="closePrint()">← 戻る</button>
+    <button class="print-exec" onclick="window.print()">🖨️ 印刷</button>
+    <span style="font-size:11px;color:#888">A4横推奨</span>
+  </div>
+  <div class="delivery-wrap" id="delivery-content"></div>
+</div>
+
+<script>
+const STORES = ["中島店","山王店","太田川店"];
+const ITEMS = [
+  {id:1, name:"食パン7枚切",       unit:"斤", jisha:610,  daiko:650 },
+  {id:2, name:"食パン10枚切",      unit:"斤", jisha:610,  daiko:650 },
+  {id:3, name:"食パン15枚切",      unit:"斤", jisha:610,  daiko:650 },
+  {id:4, name:"食パンスライスなし", unit:"斤", jisha:610,  daiko:650 },
+  {id:5, name:"生ドーナツプレーン", unit:"個", jisha:105,  daiko:110 },
+  {id:6, name:"生ドーナツチョコ",  unit:"個", jisha:145,  daiko:150 },
+  {id:7, name:"バスクチーズケーキ", unit:"個", jisha:2896, daiko:2936},
+  {id:8, name:"アップルパイ",      unit:"個", jisha:3224, daiko:3264},
+  {id:9, name:"ホットケーキ5枚入", unit:"袋", jisha:575,  daiko:600 },
+];
+
+const GAS_KEY = "yoshino_gas_url";
+function getGasUrl() { return localStorage.getItem(GAS_KEY)||""; }
+function saveGasUrl() {
+  const url = document.getElementById("gas-url-input").value.trim();
+  if (!url) { alert("URLを入力してください"); return; }
+  localStorage.setItem(GAS_KEY, url);
+  updateBanner();
+}
+function resetGasUrl() { localStorage.removeItem(GAS_KEY); location.reload(); }
+function updateBanner() {
+  const url = getGasUrl();
+  if (!url) return;
+  document.getElementById("setup-banner").innerHTML =
+    `<div class="connected-badge">✅ GAS接続済み<button onclick="resetGasUrl()">変更</button></div>`;
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+function addDays(s,n) { const d=new Date(s); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function fmtDate(s) {
+  if (!s) return "";
+  const str = (s instanceof Date) ? s.toISOString().slice(0,10) : String(s).slice(0,10);
+  const [y,m,d] = str.split("-");
+  return `${y}年${parseInt(m)}月${parseInt(d)}日`;
+}
+function fmtNum(n) { return Number(n).toLocaleString(); }
+
+function switchTab(tab) {
+  document.getElementById("tab-input-content").style.display   = tab==="input"   ? "":"none";
+  document.getElementById("tab-history-content").style.display = tab==="history" ? "":"none";
+  document.getElementById("submit-footer").style.display       = tab==="input"   ? "":"none";
+  document.getElementById("tab-input").className   = "tab "+(tab==="input"   ?"active":"inactive");
+  document.getElementById("tab-history").className = "tab "+(tab==="history" ?"active":"inactive");
+  if (tab==="history") loadHistory();
+}
+
+function initForm() {
+  const sel = document.getElementById("f-store");
+  STORES.forEach(s => { const o=document.createElement("option"); o.value=o.text=s; sel.appendChild(o); });
+  const td = today();
+  document.getElementById("f-order-date").value    = td;
+  document.getElementById("f-delivery-date").value = addDays(td,1);
+
+  const grid = document.getElementById("items-grid");
+  ITEMS.forEach(item => {
+    const c = document.createElement("div");
+    c.className = "item-card";
+    c.innerHTML = `
+      <div class="item-header">
+        <span class="item-name">${item.name}</span>
+        <span class="item-unit">${item.unit}</span>
+      </div>
+      <div class="qty-row">
+        <div class="qty-block">
+          <div class="qty-label jisha">🏠 自社便</div>
+          <div class="qty-price">¥${fmtNum(item.jisha)} / ${item.unit}</div>
+          <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
+            class="qty-input" id="q-jisha-${item.id}"
+            oninput="this.classList.toggle('has-value',this.value!=='')">
+        </div>
+        <div class="qty-block">
+          <div class="qty-label daiko">🚚 大光便</div>
+          <div class="qty-price">¥${fmtNum(item.daiko)} / ${item.unit}</div>
+          <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
+            class="qty-input" id="q-daiko-${item.id}"
+            oninput="this.classList.toggle('has-value',this.value!=='')">
+        </div>
+      </div>`;
+    grid.appendChild(c);
+  });
+
+  const fb = document.getElementById("filter-bar");
+  ["全店舗",...STORES].forEach(s => {
+    const b = document.createElement("button");
+    b.className = "filter-btn"+(s==="全店舗"?" active":"");
+    b.textContent = s;
+    b.onclick = () => { fb.querySelectorAll(".filter-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); renderHistory(s); };
+    fb.appendChild(b);
+  });
+}
+
+function onOrderDateChange() {
+  const v = document.getElementById("f-order-date").value;
+  if (v) document.getElementById("f-delivery-date").value = addDays(v,1);
+}
+
+async function submitOrder() {
+  const url = getGasUrl();
+  if (!url) { alert("先にGAS URLを設定してください"); return; }
+  const payload = {
+    action:"add",
+    store:        document.getElementById("f-store").value,
+    orderDate:    document.getElementById("f-order-date").value,
+    deliveryDate: document.getElementById("f-delivery-date").value,
+  };
+  ITEMS.forEach(item => {
+    payload[`jisha_${item.id}`] = Number(document.getElementById(`q-jisha-${item.id}`).value)||0;
+    payload[`daiko_${item.id}`] = Number(document.getElementById(`q-daiko-${item.id}`).value)||0;
+  });
+  const btn = document.getElementById("submit-btn");
+  btn.disabled=true; btn.textContent="送信中…";
+  try {
+    const res  = await fetch(url,{method:"POST",body:JSON.stringify(payload)});
+    const json = await res.json();
+    if (json.status!=="ok") throw new Error(json.message||"エラー");
+    btn.classList.add("saved"); btn.textContent="✓ 登録しました！";
+    setTimeout(() => { btn.classList.remove("saved"); btn.disabled=false; btn.textContent="発注を登録する →"; resetForm(); }, 1800);
+  } catch(e) { alert("送信エラー: "+e.message); btn.disabled=false; btn.textContent="発注を登録する →"; }
+}
+
+function resetForm() {
+  const td=today();
+  document.getElementById("f-order-date").value    = td;
+  document.getElementById("f-delivery-date").value = addDays(td,1);
+  ITEMS.forEach(item => ["jisha","daiko"].forEach(t => {
+    const el=document.getElementById(`q-${t}-${item.id}`);
+    el.value=""; el.classList.remove("has-value");
+  }));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+let _orders = [];
+async function loadHistory() {
+  const url=getGasUrl(), list=document.getElementById("history-list"), errEl=document.getElementById("history-error");
+  errEl.innerHTML="";
+  if (!url) { list.innerHTML='<div class="empty">⚙️ URLを設定してください</div>'; return; }
+  list.innerHTML='<div class="loading">読み込み中…</div>';
+  try {
+    const res=await fetch(url+"?action=list"), json=await res.json();
+    if (json.status!=="ok") throw new Error(json.message);
+    _orders=json.orders||[];
+    const active=document.querySelector("#filter-bar .filter-btn.active");
+    renderHistory(active?active.textContent:"全店舗");
+  } catch(e) { list.innerHTML=""; errEl.innerHTML=`<div class="err-msg">⚠️ 取得エラー: ${e.message}</div>`; }
+}
+
+function renderHistory(filter) {
+  const list=document.getElementById("history-list");
+  const orders=_orders.filter(o=>filter==="全店舗"||o.store===filter)
+    .sort((a,b)=>String(b.deliveryDate).localeCompare(String(a.deliveryDate)));
+  if (!orders.length) { list.innerHTML='<div class="empty">発注履歴がありません</div>'; return; }
+  list.innerHTML=orders.map(o => {
+    const lines=orderLines(o), total=lines.reduce((s,l)=>s+l.qty*l.price,0);
+    const lHtml=lines.length
+      ? lines.map(l=>`<div class="order-line">${l.label} <b>${l.qty}${l.unit}</b></div>`).join("")
+      : '<span style="font-size:11px;color:#5050a0">数量入力なし</span>';
+    return `<div class="order-card">
+      <div class="order-head">
+        <div class="order-meta">
+          <span class="badge badge-store">${o.store}</span>
+          <span class="badge badge-date">📅 ${fmtDate(o.deliveryDate)}</span>
+        </div>
+        <div class="order-total">¥${fmtNum(total)}<span style="font-size:11px;color:#7070a0;font-weight:400"> 税抜</span></div>
+      </div>
+      <div class="order-lines">${lHtml}</div>
+      <div class="order-actions">
+        <button class="btn-sm btn-print" onclick='openPrint(${JSON.stringify(o)})'>🖨️ 納品書</button>
+        <button class="btn-sm btn-del" onclick="deleteOrder('${o.id}')">削除</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function orderLines(o) {
+  const lines=[];
+  ITEMS.forEach(item => {
+    const j=Number(o[`jisha_${item.id}`])||0, d=Number(o[`daiko_${item.id}`])||0;
+    if (j>0) lines.push({label:`[自]${item.name}`,qty:j,unit:item.unit,price:item.jisha});
+    if (d>0) lines.push({label:`[大]${item.name}`,qty:d,unit:item.unit,price:item.daiko});
+  });
+  return lines;
+}
+
+async function deleteOrder(id) {
+  if (!confirm("削除しますか？")) return;
+  try {
+    const res=await fetch(getGasUrl(),{method:"POST",body:JSON.stringify({action:"delete",id})});
+    const json=await res.json();
+    if (json.status!=="ok") throw new Error(json.message);
+    await loadHistory();
+  } catch(e) { alert("削除エラー: "+e.message); }
+}
+
+function openPrint(order) {
+  const lines=orderLines(order);
+  function docHtml(title) {
+    const rows=lines.length
+      ? lines.map(l=>`<tr><td>${l.label}</td><td class="num">${l.qty}</td><td class="ctr">${l.unit}</td></tr>`).join("")
+      : `<tr><td colspan="3" style="text-align:center;color:#999;padding:8px">数量入力なし</td></tr>`;
+    return `<div class="doc-half"><h2>${title}</h2>
+      <table class="doc-meta"><tr><td>納品日</td><td>${fmtDate(order.deliveryDate)}</td></tr><tr><td>店舗</td><td>${order.store}</td></tr></table>
+      <table class="doc-table"><thead><tr><th>品名</th><th style="width:40px">数量</th><th style="width:34px">単位</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="doc-co">株式会社 カフェヨシノ</div></div>`;
+  }
+  document.getElementById("delivery-content").innerHTML =
+    docHtml("納　品　書")+'<div class="doc-divider"></div>'+docHtml("受　領　書");
+  document.getElementById("main-view").style.display="none";
+  document.getElementById("print-view").style.display="block";
+  window.scrollTo(0,0);
+}
+function closePrint() {
+  document.getElementById("main-view").style.display="";
+  document.getElementById("print-view").style.display="none";
+}
+
+updateBanner();
+initForm();
+</script>
+</body>
+</html>
