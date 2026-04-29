@@ -187,15 +187,26 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 // ══ マスターデータ ══
 const STORES = ["中島店","山王店","太田川店","ロースタリー"];
 const ITEMS = [
-  {id:1, name:"食パン7枚切",       unit:"斤", price:610 },
-  {id:2, name:"食パン10枚切",      unit:"斤", price:610 },
-  {id:3, name:"食パン20枚切",      unit:"斤", price:610 },
-  {id:4, name:"食パンスライスなし", unit:"斤", price:610 },
-  {id:5, name:"生ドーナツプレーン", unit:"個", price:105 },
-  {id:6, name:"生ドーナツチョコ",  unit:"個", price:145 },
-  {id:7, name:"バスクチーズケーキ", unit:"個", price:2896},
-  {id:8, name:"アップルパイ",      unit:"個", price:3224},
-  {id:9, name:"ホットケーキ5枚入", unit:"袋", price:575 },
+  // 既存品目（原価=自社便単価）
+  {id:1,  name:"食パン7枚切",                    unit:"斤", price:610,  cost:610  },
+  {id:2,  name:"食パン10枚切",                   unit:"斤", price:610,  cost:610  },
+  {id:3,  name:"食パン20枚切",                   unit:"斤", price:610,  cost:610  },
+  {id:4,  name:"食パンスライスなし",              unit:"斤", price:610,  cost:610  },
+  {id:5,  name:"生ドーナツプレーン",              unit:"個", price:105,  cost:105  },
+  {id:6,  name:"生ドーナツチョコ",               unit:"個", price:145,  cost:145  },
+  {id:7,  name:"バスクチーズケーキ",              unit:"個", price:2896, cost:2896 },
+  {id:8,  name:"アップルパイ",                   unit:"個", price:3224, cost:3224 },
+  {id:9,  name:"ホットケーキ5枚入",              unit:"袋", price:575,  cost:575  },
+  // 新規追加品目
+  {id:10, name:"食パン表示ラベル",               unit:"枚", price:3,    cost:1.8  },
+  {id:11, name:"ヨシノブレンド表示ラベル",       unit:"枚", price:3,    cost:1.8  },
+  {id:12, name:"アイスヨシノブレンド表示ラベル", unit:"枚", price:3,    cost:1.8  },
+  {id:13, name:"パータグラッセリュクブラン5kg",  unit:"ケース", price:9400, cost:8500 },
+  {id:14, name:"パータグラッセレタージュ5kg",    unit:"ケース", price:10500,cost:9500 },
+  {id:15, name:"ピスタチオ刻み1kg",             unit:"袋", price:6200, cost:5600 },
+  {id:16, name:"アーモンド刻み2kg",             unit:"袋", price:4100, cost:3700 },
+  {id:17, name:"ピスタチオプラリネマッセ1kg",   unit:"個", price:6000, cost:5440 },
+  {id:18, name:"送料",                          unit:"件", price:1000, cost:0    },
 ];
 
 // ══ GAS URL ══
@@ -300,7 +311,8 @@ async function submitOrder(){
   ITEMS.forEach(item=>{
     payload[`jisha_${item.id}`] = Number(document.getElementById(`q-jisha-${item.id}`).value)||0;
     payload[`daiko_${item.id}`] = Number(document.getElementById(`q-daiko-${item.id}`).value)||0;
-    payload[`price_${item.id}`] = item.price; // 単価をサーバーに送る
+    payload[`price_${item.id}`] = item.price;
+    payload[`cost_${item.id}`]  = item.cost;
   });
   const btn=document.getElementById("submit-btn");
   btn.disabled=true; btn.textContent="送信中…";
@@ -345,9 +357,15 @@ function renderHistory(filter){
   if(!orders.length){ list.innerHTML='<div class="empty">発注履歴がありません</div>'; return; }
   list.innerHTML=orders.map(o=>{
     const lines=orderLines(o);
-    const lHtml=lines.length
-      ? lines.map(l=>`<div class="order-line">${l.label} <b>${l.qty}${l.unit}</b></div>`).join("")
-      : '<span style="font-size:11px;color:#5050a0">数量入力なし</span>';
+    const rowsHtml=lines.length
+      ? lines.map(l=>`
+          <tr>
+            <td style="padding:5px 8px;font-size:12px;color:var(--text2)">${fmtDate(o.deliveryDate)}</td>
+            <td style="padding:5px 8px;font-size:12px"><span style="color:${l.type==='自社便'?'var(--jisha)':'var(--daiko)';}">${l.type}</span></td>
+            <td style="padding:5px 8px;font-size:12px;color:var(--text)">${l.name}</td>
+            <td style="padding:5px 8px;font-size:12px;text-align:right;font-weight:700;color:var(--accent)">${l.qty}<span style="font-size:10px;color:var(--text2)">${l.unit}</span></td>
+          </tr>`).join("")
+      : `<tr><td colspan="4" style="padding:8px;text-align:center;font-size:11px;color:#5050a0">数量入力なし</td></tr>`;
     return `<div class="order-card">
       <div class="order-head">
         <div class="order-meta">
@@ -355,7 +373,19 @@ function renderHistory(filter){
           <span class="badge badge-date">📅 ${fmtDate(o.deliveryDate)}</span>
         </div>
       </div>
-      <div class="order-lines">${lHtml}</div>
+      <div style="overflow-x:auto;margin-bottom:10px">
+        <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <thead>
+            <tr style="background:var(--surf2)">
+              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">納品日</th>
+              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">便区分</th>
+              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">品名</th>
+              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:right">数量</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
       <div class="order-actions">
         <button class="btn-sm btn-print" onclick='openPrint(${JSON.stringify(o)})'>🖨️ 納品書</button>
         <button class="btn-sm btn-del" onclick="deleteOrder('${o.id}')">削除</button>
@@ -368,8 +398,8 @@ function orderLines(o){
   const lines=[];
   ITEMS.forEach(item=>{
     const j=Number(o[`jisha_${item.id}`])||0, d=Number(o[`daiko_${item.id}`])||0;
-    if(j>0) lines.push({label:`[自]${item.name}`,qty:j,unit:item.unit});
-    if(d>0) lines.push({label:`[大]${item.name}`,qty:d,unit:item.unit});
+    if(j>0) lines.push({name:item.name, qty:j, unit:item.unit, type:"自社便"});
+    if(d>0) lines.push({name:item.name, qty:d, unit:item.unit, type:"大光便"});
   });
   return lines;
 }
