@@ -227,15 +227,29 @@ function updateBanner(){
 }
 
 // ══ ユーティリティ ══
-function today(){ return new Date().toISOString().slice(0,10); }
-function addDays(s,n){ const d=new Date(s); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function today(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(s,n){
+  // ローカル時間で計算（UTCズレを防ぐ）
+  const parts = String(s).slice(0,10).split('-');
+  const d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2])+n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function nowStr(){
   const d=new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 function fmtDate(s){
   if(!s) return "";
-  const str=(s instanceof Date)?s.toISOString().slice(0,10):String(s).slice(0,10);
+  let str;
+  if(s instanceof Date){
+    // Dateオブジェクトはローカル時間で変換
+    str=`${s.getFullYear()}-${String(s.getMonth()+1).padStart(2,'0')}-${String(s.getDate()).padStart(2,'0')}`;
+  } else {
+    str=String(s).slice(0,10);
+  }
   const [y,m,d]=str.split("-");
   return `${y}年${parseInt(m)}月${parseInt(d)}日`;
 }
@@ -275,12 +289,14 @@ function initForm(){
           <div class="qty-label jisha">🏠 自社便</div>
           <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
             class="qty-input" id="q-jisha-${item.id}"
+            onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown')event.preventDefault()"
             oninput="this.classList.toggle('has-value',this.value!=='')">
         </div>
         <div class="qty-block">
           <div class="qty-label daiko">🚚 大光便</div>
           <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
             class="qty-input" id="q-daiko-${item.id}"
+            onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown')event.preventDefault()"
             oninput="this.classList.toggle('has-value',this.value!=='')">
         </div>
       </div>`;
@@ -435,6 +451,7 @@ function orderLines(o){
   const lines=[];
   ITEMS.forEach(item=>{
     const j=Number(o[`jisha_${item.id}`])||0, d=Number(o[`daiko_${item.id}`])||0;
+    // 単価はitem.price（販売単価）を使用
     if(j>0) lines.push({name:`[自] ${item.name}`, qty:j, unit:item.unit, price:item.price, type:"自社便"});
     if(d>0) lines.push({name:`[大] ${item.name}`, qty:d, unit:item.unit, price:item.price, type:"大光便"});
   });
