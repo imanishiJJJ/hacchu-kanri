@@ -189,24 +189,24 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 // ══ マスターデータ ══
 const STORES = ["太田川店","山王店","中島店","ロースタリー"];
 const ITEMS = [
-  {id:1,  name:"食パン7枚切",                    unit:"斤",    price:610,   cost:610   },
-  {id:2,  name:"食パン10枚切",                   unit:"斤",    price:610,   cost:610   },
-  {id:3,  name:"食パン20枚切",                   unit:"斤",    price:610,   cost:610   },
-  {id:4,  name:"食パンスライスなし",              unit:"斤",    price:610,   cost:610   },
-  {id:5,  name:"生ドーナツプレーン",              unit:"個",    price:105,   cost:105   },
-  {id:6,  name:"生ドーナツチョコ",               unit:"個",    price:145,   cost:145   },
-  {id:7,  name:"バスクチーズケーキ",              unit:"個",    price:2896,  cost:2896  },
-  {id:8,  name:"アップルパイ",                   unit:"個",    price:3224,  cost:3224  },
-  {id:9,  name:"ホットケーキ5枚入",              unit:"袋",    price:575,   cost:575   },
-  {id:10, name:"食パン表示ラベル",               unit:"枚",    price:3,     cost:1.8   },
-  {id:11, name:"ヨシノブレンド表示ラベル",       unit:"枚",    price:3,     cost:1.8   },
-  {id:12, name:"アイスヨシノブレンド表示ラベル", unit:"枚",    price:3,     cost:1.8   },
-  {id:13, name:"パータグラッセリュクブラン5kg",  unit:"ケース",price:9400,  cost:8500  },
-  {id:14, name:"パータグラッセレタージュ5kg",    unit:"ケース",price:10500, cost:9500  },
-  {id:15, name:"ピスタチオ刻み1kg",             unit:"袋",    price:6200,  cost:5600  },
-  {id:16, name:"アーモンド刻み2kg",             unit:"袋",    price:4100,  cost:3700  },
-  {id:17, name:"ピスタチオプラリネマッセ1kg",   unit:"個",    price:6000,  cost:5440  },
-  {id:18, name:"送料",                          unit:"件",    price:1000,  cost:0     },
+  {id:1,  name:"食パン7枚切",                    unit:"斤",    price:650,  jisha:610,  cost:610   },
+  {id:2,  name:"食パン10枚切",                   unit:"斤",    price:650,  jisha:610,  cost:610   },
+  {id:3,  name:"食パン20枚切",                   unit:"斤",    price:650,  jisha:610,  cost:610   },
+  {id:4,  name:"食パンスライスなし",              unit:"斤",    price:650,  jisha:610,  cost:610   },
+  {id:5,  name:"生ドーナツプレーン",              unit:"個",    price:110,  jisha:105,  cost:105   },
+  {id:6,  name:"生ドーナツチョコ",               unit:"個",    price:150,  jisha:145,  cost:145   },
+  {id:7,  name:"バスクチーズケーキ",              unit:"個",    price:2936, jisha:2896, cost:2896  },
+  {id:8,  name:"アップルパイ",                   unit:"個",    price:3264, jisha:3224, cost:3224  },
+  {id:9,  name:"ホットケーキ5枚入",              unit:"袋",    price:600,  jisha:575,  cost:575   },
+  {id:10, name:"食パン表示ラベル",               unit:"枚",    price:3,    jisha:3,    cost:1.8   },
+  {id:11, name:"ヨシノブレンド表示ラベル",       unit:"枚",    price:3,    jisha:3,    cost:1.8   },
+  {id:12, name:"アイスヨシノブレンド表示ラベル", unit:"枚",    price:3,    jisha:3,    cost:1.8   },
+  {id:13, name:"パータグラッセリュクブラン5kg",  unit:"ケース",price:9400, jisha:9400, cost:8500  },
+  {id:14, name:"パータグラッセレタージュ5kg",    unit:"ケース",price:10500,jisha:10500,cost:9500  },
+  {id:15, name:"ピスタチオ刻み1kg",             unit:"袋",    price:6200, jisha:6200, cost:5600  },
+  {id:16, name:"アーモンド刻み2kg",             unit:"袋",    price:4100, jisha:4100, cost:3700  },
+  {id:17, name:"ピスタチオプラリネマッセ1kg",   unit:"個",    price:6000, jisha:6000, cost:5440  },
+  {id:18, name:"送料",                          unit:"件",    price:1000, jisha:1000, cost:0     },
 ];
 
 // ══ GAS URL ══
@@ -456,7 +456,7 @@ function orderLines(o){
   const lines=[];
   ITEMS.forEach(item=>{
     const j=Number(o[`jisha_${item.id}`])||0, d=Number(o[`daiko_${item.id}`])||0;
-    // 単価はitem.price（販売単価）を使用
+    // 納品書の単価は自社便・大光便ともitem.price（大光便単価）を使用
     if(j>0) lines.push({name:`[自] ${item.name}`, qty:j, unit:item.unit, price:item.price, type:"自社便"});
     if(d>0) lines.push({name:`[大] ${item.name}`, qty:d, unit:item.unit, price:item.price, type:"大光便"});
   });
