@@ -361,7 +361,7 @@ function renderHistory(filter){
       ? lines.map(l=>`
           <tr>
             <td style="padding:5px 8px;font-size:12px;color:var(--text2)">${fmtDate(o.deliveryDate)}</td>
-            <td style="padding:5px 8px;font-size:12px"><span style="color:${l.type==='自社便'?'var(--jisha)':'var(--daiko)';}">${l.type}</span></td>
+            <td style="padding:5px 8px;font-size:12px"><span style="color:${l.type==='自社便'?'var(--jisha)':'var(--daiko)'}">${l.type}</span></td>
             <td style="padding:5px 8px;font-size:12px;color:var(--text)">${l.name}</td>
             <td style="padding:5px 8px;font-size:12px;text-align:right;font-weight:700;color:var(--accent)">${l.qty}<span style="font-size:10px;color:var(--text2)">${l.unit}</span></td>
           </tr>`).join("")
