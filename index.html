@@ -286,17 +286,19 @@ function initForm(){
       </div>
       <div class="qty-row">
         <div class="qty-block">
-          <div class="qty-label jisha">🏠 自社便</div>
-          <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
-            class="qty-input" id="q-jisha-${item.id}"
-            onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown')event.preventDefault()"
-            oninput="this.classList.toggle('has-value',this.value!=='')">
-        </div>
-        <div class="qty-block">
           <div class="qty-label daiko">🚚 大光便</div>
           <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
             class="qty-input" id="q-daiko-${item.id}"
             onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown')event.preventDefault()"
+            onwheel="event.preventDefault()"
+            oninput="this.classList.toggle('has-value',this.value!=='')">
+        </div>
+        <div class="qty-block">
+          <div class="qty-label jisha">🏠 自社便</div>
+          <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" placeholder="0"
+            class="qty-input" id="q-jisha-${item.id}"
+            onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown')event.preventDefault()"
+            onwheel="event.preventDefault()"
             oninput="this.classList.toggle('has-value',this.value!=='')">
         </div>
       </div>`;
@@ -404,7 +406,10 @@ async function loadHistory(){
 
 function renderHistory(filter){
   const list=document.getElementById("history-list");
-  const orders=_orders.filter(o=>filter==="全店舗"||o.store===filter)
+  const orders=_orders
+    .filter(o=>filter==="全店舗"||o.store===filter)
+    // 店舗・日付が空のブランク行は非表示
+    .filter(o=>o.store && String(o.deliveryDate).slice(0,4).match(/^\d{4}$/))
     .sort((a,b)=>String(b.deliveryDate).localeCompare(String(a.deliveryDate)));
   if(!orders.length){ list.innerHTML='<div class="empty">発注履歴がありません</div>'; return; }
   list.innerHTML=orders.map(o=>{
