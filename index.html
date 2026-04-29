@@ -88,6 +88,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .order-actions{display:flex;gap:8px;}
 .btn-sm{flex:1;padding:10px;border-radius:8px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-print{background:#1e2e4a;color:#80b0e0;}
+.btn-edit{background:#1e2a1e;color:#70c080;}
 .btn-del{background:#2a1818;color:var(--red);}
 
 .empty{text-align:center;padding:60px 20px;color:#4040a0;font-size:14px;}
@@ -143,6 +144,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
     <!-- 発注入力 -->
     <div id="tab-input-content">
+      <div id="edit-banner" style="display:none;background:#1e2a1e;border:1px solid #3a6040;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#70c080;display:none;align-items:center;gap:10px;">
+        ✏️ 訂正モード
+        <button onclick="cancelEdit()" style="margin-left:auto;background:transparent;border:1px solid #3a6040;border-radius:6px;padding:3px 12px;color:var(--text2);font-family:inherit;font-size:11px;cursor:pointer;">キャンセル</button>
+      </div>
       <div class="form-top">
         <div class="field field-full">
           <label>店舗</label>
@@ -302,10 +307,12 @@ function initForm(){
 async function submitOrder(){
   const url=getGasUrl();
   if(!url){ alert("先にGAS URLを設定してください"); return; }
+  const isEdit = !!_editingId;
   const payload={
-    action:"add",
+    action:       isEdit ? "update" : "add",
+    id:           isEdit ? _editingId : undefined,
     store:        document.getElementById("f-store").value,
-    inputDate:    nowStr(),   // 入力日時（スプレッドシートに記録）
+    inputDate:    nowStr(),
     deliveryDate: document.getElementById("f-delivery-date").value,
   };
   ITEMS.forEach(item=>{
@@ -320,9 +327,12 @@ async function submitOrder(){
     const res=await fetch(url,{method:"POST",body:JSON.stringify(payload)});
     const json=await res.json();
     if(json.status!=="ok") throw new Error(json.message||"エラー");
-    btn.classList.add("saved"); btn.textContent="✓ 登録しました！";
+    btn.classList.add("saved");
+    btn.textContent = isEdit ? "✓ 訂正しました！" : "✓ 登録しました！";
+    _editingId = null;
+    document.getElementById("edit-banner").style.display="none";
     setTimeout(()=>{ btn.classList.remove("saved"); btn.disabled=false; btn.textContent="発注を登録する →"; resetForm(); },1800);
-  }catch(e){ alert("送信エラー: "+e.message); btn.disabled=false; btn.textContent="発注を登録する →"; }
+  }catch(e){ alert("送信エラー: "+e.message); btn.disabled=false; btn.textContent= isEdit?"訂正を保存する →":"発注を登録する →"; }
 }
 
 function resetForm(){
@@ -334,7 +344,38 @@ function resetForm(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-// ══ 履歴 ══
+// ══ 編集状態 ══
+let _editingId = null;
+
+function editOrder(order){
+  _editingId = order.id;
+  // 入力タブに切り替えてフォームに値をセット
+  switchTab('input');
+  document.getElementById("f-store").value = order.store;
+  document.getElementById("f-delivery-date").value =
+    (order.deliveryDate instanceof Date)
+      ? order.deliveryDate.toISOString().slice(0,10)
+      : String(order.deliveryDate).slice(0,10);
+  ITEMS.forEach(item=>{
+    const jEl=document.getElementById(`q-jisha-${item.id}`);
+    const dEl=document.getElementById(`q-daiko-${item.id}`);
+    const jv = Number(order[`jisha_${item.id}`])||0;
+    const dv = Number(order[`daiko_${item.id}`])||0;
+    jEl.value = jv||""; jEl.classList.toggle("has-value", jv>0);
+    dEl.value = dv||""; dEl.classList.toggle("has-value", dv>0);
+  });
+  const banner = document.getElementById("edit-banner");
+  banner.style.display = "flex";
+  document.getElementById("submit-btn").textContent = "訂正を保存する →";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function cancelEdit(){
+  _editingId = null;
+  document.getElementById("edit-banner").style.display = "none";
+  document.getElementById("submit-btn").textContent = "発注を登録する →";
+  resetForm();
+}
 let _orders=[];
 async function loadHistory(){
   const url=getGasUrl(), list=document.getElementById("history-list"), errEl=document.getElementById("history-error");
@@ -387,6 +428,7 @@ function renderHistory(filter){
         </table>
       </div>
       <div class="order-actions">
+        <button class="btn-sm btn-edit" onclick='editOrder(${JSON.stringify(o)})'>✏️ 訂正</button>
         <button class="btn-sm btn-print" onclick='openPrint(${JSON.stringify(o)})'>🖨️ 納品書</button>
         <button class="btn-sm btn-del" onclick="deleteOrder('${o.id}')">削除</button>
       </div>
