@@ -475,22 +475,70 @@ async function deleteOrder(id){
 }
 
 // ══ 納品書・受領書印刷 ══
-function openPrint(order){
-  const lines=orderLines(order);
+// 基本9品（[大]のみ）: 単価・金額・合計なし
+// それ以外: 単価・金額・合計あり
+// 両方ある場合はA4×2枚出力
 
-  // 税率別に合計計算
-  const total8  = lines.filter(l=>l.tax===0.08).reduce((s,l)=>s+l.qty*l.price,0);
-  const total10 = lines.filter(l=>l.tax===0.10).reduce((s,l)=>s+l.qty*l.price,0);
+const BASIC_ITEMS = new Set([1,2,3,4,5,6,7,8,9]); // 基本9品のID
+
+function openPrint(order){
+  const allLines = orderLines(order);
+
+  // 基本9品の[大]のみ
+  const basicLines  = allLines.filter(l => BASIC_ITEMS.has(
+    ITEMS.find(i => `[大] ${i.name}` === l.name || `[自] ${i.name}` === l.name)?.id
+  ) && l.type === "大光便");
+
+  // それ以外（基本9品の自社便含む、ラベル・バター・送料など）
+  const otherLines  = allLines.filter(l => {
+    const item = ITEMS.find(i => `[大] ${i.name}` === l.name || `[自] ${i.name}` === l.name);
+    if (!item) return true;
+    if (BASIC_ITEMS.has(item.id) && l.type === "大光便") return false;
+    return true;
+  });
+
+  // 税率別合計（その他アイテム用）
+  const total8  = otherLines.filter(l=>l.tax===0.08).reduce((s,l)=>s+l.qty*l.price,0);
+  const total10 = otherLines.filter(l=>l.tax===0.10).reduce((s,l)=>s+l.qty*l.price,0);
   const taxTotal = Math.round(total8*1.08) + Math.round(total10*1.10);
 
-  function docHtml(title, headerColor){
-    const isBlue = headerColor==="blue";
-    const hdrBg  = isBlue ? "#1565C0" : "#2E7D32";
-    const hdrTxt = "#FFFFFF";
-    const rowBg1 = isBlue ? "#E3F2FD" : "#E8F5E9";
+  // 基本納品書（単価・金額・合計なし）
+  function basicDocHtml(title, hdrBg, rowBg1){
+    const rows = basicLines.length
+      ? basicLines.map((l,i)=>{
+          const bg = i%2===0 ? rowBg1 : "#FFFFFF";
+          return `<tr style="background:${bg}">
+            <td style="padding:5px 8px;font-size:11px;border-bottom:1px solid #ddd">${l.name}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;font-weight:bold;border-bottom:1px solid #ddd">${l.qty}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;border-bottom:1px solid #ddd">${l.unit}</td>
+          </tr>`;
+        }).join("")
+      : `<tr><td colspan="3" style="padding:12px;text-align:center;color:#999;font-size:10px">数量入力なし</td></tr>`;
 
-    const rows = lines.length
-      ? lines.map((l,i)=>{
+    return `<div style="width:50%;padding:16px 18px;font-family:'Noto Serif JP',serif;box-sizing:border-box;">
+      <div style="background:${hdrBg};color:#fff;text-align:center;font-size:16px;font-weight:bold;letter-spacing:.3em;padding:10px;margin-bottom:10px;">${title}</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10px;">
+        <tr><td style="width:80px;color:#555">カフェヨシノ</td><td style="font-weight:bold">${order.store}</td></tr>
+        <tr><td style="color:#555">納品日</td><td style="font-weight:bold">${fmtDate(order.deliveryDate)}</td></tr>
+      </table>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #999;">
+        <thead>
+          <tr style="background:${hdrBg};color:#fff;">
+            <th style="padding:5px 8px;font-size:10px;text-align:left">品名</th>
+            <th style="padding:5px 8px;font-size:10px;width:44px">数量</th>
+            <th style="padding:5px 8px;font-size:10px;width:34px">単位</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:6px;text-align:right;font-size:9px;color:#555">株式会社 カフェヨシノ　〒455-0832　愛知県名古屋市港区宝神三丁目1311　TEL：052-355-8849</div>
+    </div>`;
+  }
+
+  // その他納品書（単価・金額・合計あり）
+  function otherDocHtml(title, hdrBg, rowBg1){
+    const rows = otherLines.length
+      ? otherLines.map((l,i)=>{
           const bg = i%2===0 ? rowBg1 : "#FFFFFF";
           const taxMark = l.tax===0.10 ? '<span style="font-size:9px;color:#c00;margin-left:2px">※10%</span>' : '';
           return `<tr style="background:${bg}">
@@ -503,18 +551,14 @@ function openPrint(order){
         }).join("")
       : `<tr><td colspan="5" style="padding:12px;text-align:center;color:#999;font-size:10px">数量入力なし</td></tr>`;
 
-    // 税率別内訳
-    const taxBreakdown = `
-      <div style="font-size:9px;color:#555;text-align:right;margin-top:4px;">
-        ${total8>0 ? `8%対象：¥${fmtNum(total8)}　税額：¥${fmtNum(Math.round(total8*0.08))}` : ''}
-        ${total8>0 && total10>0 ? '　／　' : ''}
-        ${total10>0 ? `10%対象：¥${fmtNum(total10)}　税額：¥${fmtNum(Math.round(total10*0.10))}` : ''}
-      </div>`;
+    const taxBreakdown = `<div style="font-size:9px;color:#555;text-align:right;margin-top:4px;">
+      ${total8>0 ? `8%対象：¥${fmtNum(total8)}　税額：¥${fmtNum(Math.round(total8*0.08))}` : ''}
+      ${total8>0 && total10>0 ? '　／　' : ''}
+      ${total10>0 ? `10%対象：¥${fmtNum(total10)}　税額：¥${fmtNum(Math.round(total10*0.10))}` : ''}
+    </div>`;
 
     return `<div style="width:50%;padding:16px 18px;font-family:'Noto Serif JP',serif;box-sizing:border-box;">
-      <div style="background:${hdrBg};color:${hdrTxt};text-align:center;font-size:16px;font-weight:bold;letter-spacing:.3em;padding:10px;margin-bottom:10px;">
-        ${title}
-      </div>
+      <div style="background:${hdrBg};color:#fff;text-align:center;font-size:16px;font-weight:bold;letter-spacing:.3em;padding:10px;margin-bottom:10px;">${title}</div>
       <table style="width:100%;border-collapse:collapse;margin-bottom:6px;font-size:10px;">
         <tr><td style="width:80px;color:#555">カフェヨシノ</td><td style="font-weight:bold">${order.store}</td></tr>
         <tr><td style="color:#555">納品日</td><td style="font-weight:bold">${fmtDate(order.deliveryDate)}</td></tr>
@@ -529,12 +573,12 @@ function openPrint(order){
       ${taxBreakdown}
       <table style="width:100%;border-collapse:collapse;border:1px solid #999;margin-top:6px;">
         <thead>
-          <tr style="background:${hdrBg};color:${hdrTxt};">
-            <th style="padding:4px 8px;font-size:10px;text-align:left;border:1px solid rgba(255,255,255,.3)">品名</th>
-            <th style="padding:4px 8px;font-size:10px;width:36px;border:1px solid rgba(255,255,255,.3)">数量</th>
-            <th style="padding:4px 8px;font-size:10px;width:30px;border:1px solid rgba(255,255,255,.3)">単位</th>
-            <th style="padding:4px 8px;font-size:10px;width:54px;border:1px solid rgba(255,255,255,.3)">単価</th>
-            <th style="padding:4px 8px;font-size:10px;width:60px;border:1px solid rgba(255,255,255,.3)">金額</th>
+          <tr style="background:${hdrBg};color:#fff;">
+            <th style="padding:4px 8px;font-size:10px;text-align:left">品名</th>
+            <th style="padding:4px 8px;font-size:10px;width:36px">数量</th>
+            <th style="padding:4px 8px;font-size:10px;width:30px">単位</th>
+            <th style="padding:4px 8px;font-size:10px;width:54px">単価</th>
+            <th style="padding:4px 8px;font-size:10px;width:60px">金額</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -544,11 +588,31 @@ function openPrint(order){
     </div>`;
   }
 
-  document.getElementById("delivery-content").innerHTML=
-    docHtml("納　品　書","blue") +
-    '<div style="width:1px;background:#ccc;margin:12px 0"></div>' +
-    docHtml("受　領　書","green");
+  let html = "";
 
+  // 基本9品がある場合 → 1枚目（A4横）
+  if (basicLines.length > 0) {
+    html += `<div style="display:flex;width:100%;page-break-after:${otherLines.length>0?'always':'auto'};">
+      ${basicDocHtml("納　品　書","#1565C0","#E3F2FD")}
+      <div style="width:1px;background:#ccc;margin:12px 0"></div>
+      ${basicDocHtml("受　領　書","#2E7D32","#E8F5E9")}
+    </div>`;
+  }
+
+  // その他アイテムがある場合 → 2枚目（A4横）
+  if (otherLines.length > 0) {
+    html += `<div style="display:flex;width:100%;">
+      ${otherDocHtml("納　品　書","#1565C0","#E3F2FD")}
+      <div style="width:1px;background:#ccc;margin:12px 0"></div>
+      ${otherDocHtml("受　領　書","#2E7D32","#E8F5E9")}
+    </div>`;
+  }
+
+  if (!html) {
+    html = `<div style="padding:40px;text-align:center;color:#999;font-size:14px;">数量入力なし</div>`;
+  }
+
+  document.getElementById("delivery-content").innerHTML = html;
   document.getElementById("main-view").style.display="none";
   document.getElementById("print-view").style.display="block";
   window.scrollTo(0,0);
