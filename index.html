@@ -484,17 +484,18 @@ const BASIC_ITEMS = new Set([1,2,3,4,5,6,7,8,9]); // 基本9品のID
 function openPrint(order){
   const allLines = orderLines(order);
 
-  // 基本9品の[大]のみ
-  const basicLines  = allLines.filter(l => BASIC_ITEMS.has(
-    ITEMS.find(i => `[大] ${i.name}` === l.name || `[自] ${i.name}` === l.name)?.id
-  ) && l.type === "大光便");
+  // 基本9品の[大]のみ → 1枚目（単価なし）
+  const basicLines = allLines.filter(l => {
+    const item = ITEMS.find(i => l.name === `[大] ${i.name}` || l.name === `[自] ${i.name}`);
+    return item && BASIC_ITEMS.has(item.id) && l.type === "大光便";
+  });
 
-  // それ以外（基本9品の自社便含む、ラベル・バター・送料など）
-  const otherLines  = allLines.filter(l => {
-    const item = ITEMS.find(i => `[大] ${i.name}` === l.name || `[自] ${i.name}` === l.name);
-    if (!item) return true;
-    if (BASIC_ITEMS.has(item.id) && l.type === "大光便") return false;
-    return true;
+  // それ以外 → 2枚目（単価あり）
+  const otherLines = allLines.filter(l => {
+    const item = ITEMS.find(i => l.name === `[大] ${i.name}` || l.name === `[自] ${i.name}`);
+    if (!item) return true;                              // 品名が見つからない場合も表示
+    if (BASIC_ITEMS.has(item.id) && l.type === "大光便") return false; // 基本9品[大]は除外
+    return true;                                         // それ以外はすべて2枚目
   });
 
   // 税率別合計（その他アイテム用）
