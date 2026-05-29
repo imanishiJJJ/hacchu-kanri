@@ -249,15 +249,19 @@ function nowStr(){
 }
 function fmtDate(s){
   if(!s) return "";
+  // 文字列の場合はそのまま分割（UTCへの変換を避ける）
   let str;
   if(s instanceof Date){
     // Dateオブジェクトはローカル時間で変換
     str=`${s.getFullYear()}-${String(s.getMonth()+1).padStart(2,'0')}-${String(s.getDate()).padStart(2,'0')}`;
   } else {
-    str=String(s).slice(0,10);
+    // 文字列は先頭の'を除去してからスライス
+    str=String(s).replace(/^'/,'').slice(0,10);
   }
-  const [y,m,d]=str.split("-");
-  return `${y}年${parseInt(m)}月${parseInt(d)}日`;
+  if(!str || str.length < 10) return String(s);
+  const parts=str.split("-");
+  if(parts.length < 3) return String(s);
+  return `${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
 }
 function fmtNum(n){ return Number(n).toLocaleString(); }
 
