@@ -192,7 +192,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <script>
 // ══ マスターデータ ══
-const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店"];
+const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫"];
 const ITEMS = [
   {id:1,  name:"食パン7枚切",                    unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
   {id:2,  name:"食パン10枚切",                   unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
@@ -217,6 +217,9 @@ const ITEMS = [
   {id:21, name:"ローストビーフ",                unit:"パック",price:4866, jisha:4866, cost:4616, tax:0.08},
   {id:22, name:"ハーブチキン（もも）",          unit:"パック",price:732,  jisha:732,  cost:682,  tax:0.08},
   {id:23, name:"スーパーたれ",                  unit:"本",    price:3268, jisha:3268, cost:3018, tax:0.08},
+  {id:24, name:"生ドーナツプレーン生地",         unit:"個",    price:56,   jisha:56,   cost:53,   tax:0.08},
+  {id:25, name:"生ドーナツココア生地",           unit:"個",    price:70,   jisha:70,   cost:66,   tax:0.08},
+  {id:26, name:"食パン生地",                     unit:"個",    price:30,   jisha:30,   cost:28,   tax:0.08},
 ];
 
 // ══ GAS URL ══
@@ -431,12 +434,11 @@ function renderHistory(filter){
     const rowsHtml=lines.length
       ? lines.map(l=>`
           <tr>
-            <td style="padding:5px 8px;font-size:12px;color:var(--text2)">${fmtDate(o.deliveryDate)}</td>
-            <td style="padding:5px 8px;font-size:12px"><span style="color:${l.type==='自社便'?'var(--jisha)':'var(--daiko)'}">${l.type}</span></td>
-            <td style="padding:5px 8px;font-size:12px;color:var(--text)">${l.name}</td>
-            <td style="padding:5px 8px;font-size:12px;text-align:right;font-weight:700;color:var(--accent)">${l.qty}<span style="font-size:10px;color:var(--text2)">${l.unit}</span></td>
+            <td style="padding:5px 6px;font-size:11px;white-space:nowrap"><span style="color:${l.type==='自社便'?'var(--jisha)':'var(--daiko)'}">${l.type}</span></td>
+            <td style="padding:5px 6px;font-size:11px;color:var(--text);word-break:keep-all">${l.name}</td>
+            <td style="padding:5px 6px;font-size:12px;text-align:right;font-weight:700;color:var(--accent);white-space:nowrap">${l.qty}<span style="font-size:10px;color:var(--text2)">${l.unit}</span></td>
           </tr>`).join("")
-      : `<tr><td colspan="4" style="padding:8px;text-align:center;font-size:11px;color:#5050a0">数量入力なし</td></tr>`;
+      : `<tr><td colspan="3" style="padding:8px;text-align:center;font-size:11px;color:#5050a0">数量入力なし</td></tr>`;
     return `<div class="order-card">
       <div class="order-head">
         <div class="order-meta">
@@ -448,10 +450,9 @@ function renderHistory(filter){
         <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">
           <thead>
             <tr style="background:var(--surf2)">
-              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">納品日</th>
-              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">便区分</th>
-              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">品名</th>
-              <th style="padding:5px 8px;font-size:11px;color:var(--text2);font-weight:600;text-align:right">数量</th>
+              <th style="padding:5px 6px;font-size:11px;color:var(--text2);font-weight:600;text-align:left;white-space:nowrap">便区分</th>
+              <th style="padding:5px 6px;font-size:11px;color:var(--text2);font-weight:600;text-align:left">品名</th>
+              <th style="padding:5px 6px;font-size:11px;color:var(--text2);font-weight:600;text-align:right;white-space:nowrap">数量</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
