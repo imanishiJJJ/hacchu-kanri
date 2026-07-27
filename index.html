@@ -492,7 +492,7 @@ async function deleteOrder(id){
 // それ以外: 単価・金額・合計あり
 // 両方ある場合はA4×2枚出力
 
-const BASIC_ITEMS = new Set([1,2,3,4,5,6,7,8,9]); // 基本9品のID
+const BASIC_ITEMS = new Set([1,2,3,4,5,6,7,8,9,24,25,26]); // 基本9品＋生地3品
 
 function openPrint(order){
   const allLines = orderLines(order);
