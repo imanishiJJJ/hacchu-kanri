@@ -192,7 +192,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <script>
 // ══ マスターデータ ══
-const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫"];
+const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫","常滑店"];
 const ITEMS = [
   {id:1,  name:"食パン7枚切",                    unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
   {id:2,  name:"食パン10枚切",                   unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
@@ -282,11 +282,17 @@ function switchTab(tab){
   if(tab==="history") loadHistory();
 }
 
+// 常滑店で扱う商品ID（食パン4種＋食パン表示ラベル）
+const TOKONAME_ITEMS = new Set([1,2,3,4,10]);
+
 // ══ フォーム初期化 ══
 function initForm(){
   // 店舗
   const sel=document.getElementById("f-store");
   STORES.forEach(s=>{ const o=document.createElement("option"); o.value=o.text=s; sel.appendChild(o); });
+
+  // 店舗変更時に商品フィルタリング
+  sel.addEventListener("change", filterItemsByStore);
 
   // 納品日（デフォルト+1日、任意変更可）
   document.getElementById("f-delivery-date").value = addDays(today(),1);
@@ -296,6 +302,7 @@ function initForm(){
   ITEMS.forEach(item=>{
     const c=document.createElement("div");
     c.className="item-card";
+    c.id=`item-card-${item.id}`;
     c.innerHTML=`
       <div class="item-header">
         <span class="item-name">${item.name}</span>
@@ -322,6 +329,8 @@ function initForm(){
     grid.appendChild(c);
   });
 
+  filterItemsByStore();
+
   // フィルター
   const fb=document.getElementById("filter-bar");
   ["全店舗",...STORES].forEach(s=>{
@@ -330,6 +339,16 @@ function initForm(){
     b.textContent=s;
     b.onclick=()=>{ fb.querySelectorAll(".filter-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); renderHistory(s); };
     fb.appendChild(b);
+  });
+}
+
+function filterItemsByStore(){
+  const store=document.getElementById("f-store").value;
+  const isTokoname = store==="常滑店";
+  ITEMS.forEach(item=>{
+    const card=document.getElementById(`item-card-${item.id}`);
+    if(!card) return;
+    card.style.display = isTokoname && !TOKONAME_ITEMS.has(item.id) ? "none" : "";
   });
 }
 
