@@ -192,7 +192,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <script>
 // ══ マスターデータ ══
-const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫","常滑店"];
+const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫","常滑店","東海荒尾店"];
 const ITEMS = [
   {id:1,  name:"食パン7枚切",                    unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
   {id:2,  name:"食パン10枚切",                   unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
@@ -344,11 +344,11 @@ function initForm(){
 
 function filterItemsByStore(){
   const store=document.getElementById("f-store").value;
-  const isTokoname = store==="常滑店";
+  const isLimited = store==="常滑店" || store==="東海荒尾店";
   ITEMS.forEach(item=>{
     const card=document.getElementById(`item-card-${item.id}`);
     if(!card) return;
-    card.style.display = isTokoname && !TOKONAME_ITEMS.has(item.id) ? "none" : "";
+    card.style.display = isLimited && !TOKONAME_ITEMS.has(item.id) ? "none" : "";
   });
 }
 
