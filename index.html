@@ -192,7 +192,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <script>
 // ══ マスターデータ ══
-const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫","常滑店","東海荒尾店"];
+const STORES = ["太田川店","山王店","中島店","ロースタリー","小牧店","長久手店","庄内緑地公園店","大高店","大光倉庫","常滑店","東海荒尾店","宝神店"];
 const ITEMS = [
   {id:1,  name:"食パン7枚切",                    unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
   {id:2,  name:"食パン10枚切",                   unit:"斤",    price:650,  jisha:610,  cost:610,  tax:0.08},
@@ -282,8 +282,12 @@ function switchTab(tab){
   if(tab==="history") loadHistory();
 }
 
-// 常滑店で扱う商品ID（食パン4種＋食パン表示ラベル）
+// 常滑・東海荒尾 で扱う商品ID（食パン4種＋食パン表示ラベル）
 const TOKONAME_ITEMS = new Set([1,2,3,4,10]);
+// 宝神店で扱う商品ID（食パン4種＋食パン表示ラベル＋送料）
+const HOUJIN_ITEMS = new Set([1,2,3,4,10,18]);
+// 自社便のみの店舗（大光便欄を非表示）
+const JISHA_ONLY_STORES = new Set(["宝神店"]);
 
 // ══ フォーム初期化 ══
 function initForm(){
@@ -344,11 +348,21 @@ function initForm(){
 
 function filterItemsByStore(){
   const store=document.getElementById("f-store").value;
-  const isLimited = store==="常滑店" || store==="東海荒尾店";
+  const isTokoname  = store==="常滑店" || store==="東海荒尾店";
+  const isHoujin    = store==="宝神店";
+  const isJishaOnly = JISHA_ONLY_STORES.has(store);
+
   ITEMS.forEach(item=>{
     const card=document.getElementById(`item-card-${item.id}`);
     if(!card) return;
-    card.style.display = isLimited && !TOKONAME_ITEMS.has(item.id) ? "none" : "";
+    // アイテム絞り込み
+    let hidden = false;
+    if(isTokoname && !TOKONAME_ITEMS.has(item.id)) hidden=true;
+    if(isHoujin   && !HOUJIN_ITEMS.has(item.id))   hidden=true;
+    card.style.display = hidden ? "none" : "";
+    // 大光便欄の表示切替
+    const daikoBlock=document.getElementById(`q-daiko-${item.id}`)?.closest(".qty-block");
+    if(daikoBlock) daikoBlock.style.display = isJishaOnly ? "none" : "";
   });
 }
 
